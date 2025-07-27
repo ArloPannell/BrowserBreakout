@@ -8,3 +8,9 @@
   display: block;
   margin: 0 auto;
 }
+
+.button {
+  display: block;
+  margin: auto;
+  margin-top: 10px;
+}
