@@ -1,27 +1,23 @@
+import Paddle from "../components/Paddle.js";
+import Score from "../components/Score.js";
+import Lives from "../components/Lives.js";
+import Bricks from "../components/Bricks.js";
+import Ball from "../components/Ball.js";
+
+import { levels, ballSpecs, paddleSpecs } from "../utils/settings.js";
+
 const canvas = document.getElementById("myCanvas");
 const ctx = canvas.getContext("2d");
 
-const paddleHeight = 10;
-const paddleWidth = 75;
-let paddleX = (canvas.width - paddleWidth) / 2;
+let paddleX = (canvas.width - paddleSpecs[0].paddleWidth) / 2;
 let rightPressed = false;
 let leftPressed = false;
 
-const brickRowCount = 3;
-const brickColumnCount = 5;
-const brickWidth = 75;
-const brickHeight = 20;
-const brickPadding = 10;
-const brickOffsetTop = 30;
-const brickOffsetLeft = 30;
-
-const bricks = [];
-for (let c = 0; c < brickColumnCount; c++) {
-  bricks[c] = [];
-  for (let r = 0; r < brickRowCount; r++) {
-    bricks[c][r] = { x: 0, y: 0, status: true };
-  }
-}
+const objPaddle = new Paddle(
+  paddleSpecs[0].paddleWidth,
+  paddleSpecs[0].paddleHeight,
+  canvas
+);
 
 let y = canvas.height - 30;
 let x = canvas.width / 2;
@@ -29,63 +25,27 @@ let x = canvas.width / 2;
 let dx = 2;
 let dy = -2;
 
-const ballRadius = 10;
+const objBall = new Ball(canvas);
 
 let interval = 0;
 
 let score = 0;
+const objScore = new Score(canvas);
+
 let lives = 3;
+const objLives = new Lives(canvas);
+
 let frameDelay = 0;
 
-function drawScore() {
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#0095dd";
-  ctx.fillText(`score: ${score}`, 8, 20);
+function scoreUpdate() {
+  score++;
+  return score;
 }
-
-function drawLives() {
-  ctx.font = "16px Arial";
-  ctx.fillStyle = "#0095dd";
-  ctx.fillText(`lives: ${lives}`, canvas.width - 65, 20);
+function directionXChange() {
+  dx = -dx;
 }
-
-function drawPaddle() {
-  ctx.beginPath();
-  ctx.rect(
-    paddleX,
-    canvas.height - 5 - paddleHeight,
-    paddleWidth,
-    paddleHeight
-  );
-  ctx.fillStyle = "#0095dd";
-  ctx.fill();
-  ctx.closePath();
-}
-
-function drawBricks() {
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      if (bricks[c][r].status) {
-        const brickX = c * (brickWidth + brickPadding) + brickOffsetLeft;
-        const brickY = r * (brickHeight + brickPadding) + brickOffsetTop;
-        bricks[c][r].x = brickX;
-        bricks[c][r].y = brickY;
-        ctx.beginPath();
-        ctx.rect(brickX, brickY, brickWidth, brickHeight);
-        ctx.fillStyle = "#0095dd";
-        ctx.fill();
-        ctx.closePath();
-      }
-    }
-  }
-}
-
-function drawBall() {
-  ctx.beginPath();
-  ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-  ctx.fillStyle = "#0095dd";
-  ctx.fill();
-  ctx.closePath();
+function directionYChange() {
+  dy = -dy;
 }
 
 function drawCountdown(timer) {
@@ -112,30 +72,37 @@ async function nextLifeCountdown() {
   }
 }
 
+const objBricks = new Bricks(canvas);
+objBricks.buildBricks(levels[0]);
+
 function drawFrame() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawLives();
-  drawScore();
-  drawBricks();
-  drawBall();
-  drawPaddle();
-  drawLives();
-  collisionDetection();
+  objLives.drawLives(lives);
+  objScore.drawScore(score);
+  objBricks.drawBricks(levels[0]);
+  objBall.drawBall(ballSpecs, x, y);
+  objPaddle.drawPaddle(paddleX);
+  objBricks.collisionDetection(levels[0], x, y, scoreUpdate, directionYChange);
 }
 
 async function mainGame() {
   await sleep(frameDelay);
   drawFrame();
-
-  if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-    dx = -dx;
+  if (
+    x + dx > canvas.width - ballSpecs[0].ballRadius ||
+    x + dx < ballSpecs[0].ballRadius
+  ) {
+    directionXChange();
   }
-  if (y + dy < ballRadius) {
-    dy = -dy;
-  } else if (y + dy > canvas.height - ballRadius - 5 - paddleHeight) {
-    if (x > paddleX && x < paddleX + paddleWidth) {
-      dy = -dy;
-    } else if (y + dy > canvas.height - ballRadius) {
+  if (y + dy < ballSpecs[0].ballRadius) {
+    directionYChange();
+  } else if (
+    y + dy >
+    canvas.height - ballSpecs[0].ballRadius - 5 - paddleSpecs[0].paddleHeight
+  ) {
+    if (x > paddleX && x < paddleX + paddleSpecs[0].paddleWidth) {
+      directionYChange();
+    } else if (y + dy > canvas.height - ballSpecs[0].ballRadius) {
       lives--;
       frameDelay = 3000;
       if (!lives) {
@@ -149,7 +116,6 @@ async function mainGame() {
         y = canvas.height - 30;
         dx = 2;
         dy = -2;
-        paddleX = (canvas.width - paddleWidth) / 2;
       }
     }
   }
@@ -157,7 +123,7 @@ async function mainGame() {
   y += dy;
 
   if (rightPressed) {
-    paddleX = Math.min(paddleX + 7, canvas.width - paddleWidth);
+    paddleX = Math.min(paddleX + 7, canvas.width - paddleSpecs[0].paddleWidth);
   } else if (leftPressed) {
     paddleX = Math.max(paddleX - 7, 0);
   }
@@ -170,6 +136,7 @@ function keyDownHandler(evt) {
   } else if (evt.key === "Left" || evt.key === "ArrowLeft") {
     leftPressed = true;
   }
+  console.log(evt.key);
 }
 
 function keyUpHandler(evt) {
@@ -185,36 +152,7 @@ document.addEventListener("mousemove", mouseMoveHandler, false);
 function mouseMoveHandler(evt) {
   const relativeX = evt.clientX - canvas.offsetLeft;
   if (relativeX > 0 && relativeX < canvas.width) {
-    paddleX = relativeX - paddleWidth / 2;
-  }
-}
-
-function collisionDetection() {
-  //  Loop through all bricks
-  for (let c = 0; c < brickColumnCount; c++) {
-    for (let r = 0; r < brickRowCount; r++) {
-      const b = bricks[c][r];
-      // calculation of brick hit, turn around
-      if (b.status) {
-        if (
-          x > b.x &&
-          x < b.x + brickWidth &&
-          y > b.y &&
-          y < b.y + brickHeight
-        ) {
-          dy = -dy;
-          b.status = false;
-          score++;
-          if (score === brickRowCount * brickColumnCount) {
-            drawBricks(); // clear the last brick, and let it clear before ending the game
-            setTimeout(() => {
-              alert(`YOU WIN, CONGRATULATIONS! Your score: ${score}`);
-              document.location.reload();
-            }, 300);
-          }
-        }
-      }
-    }
+    paddleX = relativeX - paddleSpecs[0].paddleWidth / 2;
   }
 }
 
