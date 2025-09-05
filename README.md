@@ -10,7 +10,7 @@
 
 ### Project Description
 
-The purpose of this project is practice the basics of creating browser based games. It replicates the classic breakout game using HTML, CSS, and JavaScript. I made a version of this game as my final project for a C Programming class I took in the late 90's. That on one much more complicated as it used Assembly language to access the display, and C to handle everything else in the game.
+The purpose of this project is practice the basics of creating browser based games. It replicates the classic breakout game using HTML, CSS, and JavaScript. I made a version of this game as my final project for a C Programming class I took in the late 90's. That one was much more complicated as it used Assembly language to access the display, and C to handle everything else in the game.
 
 - Develop file structure independently, with freedom to name classes and files freely, following BEM standards.
 - Following tutorial from MDN :
